@@ -1,0 +1,201 @@
+{
+	"name": "scd1_customers",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"linkedService": {
+						"referenceName": "AzureDataLakeStorage1",
+						"type": "LinkedServiceReference"
+					},
+					"name": "source"
+				},
+				{
+					"linkedService": {
+						"referenceName": "AzureSqlDatabase1",
+						"type": "LinkedServiceReference"
+					},
+					"name": "Target"
+				}
+			],
+			"sinks": [
+				{
+					"linkedService": {
+						"referenceName": "AzureSqlDatabase1",
+						"type": "LinkedServiceReference"
+					},
+					"name": "sink1"
+				},
+				{
+					"linkedService": {
+						"referenceName": "AzureSqlDatabase1",
+						"type": "LinkedServiceReference"
+					},
+					"name": "sink2"
+				}
+			],
+			"transformations": [
+				{
+					"name": "Rename"
+				},
+				{
+					"name": "GenerateHashkey"
+				},
+				{
+					"name": "joinSourceWithTarget"
+				},
+				{
+					"name": "Insert"
+				},
+				{
+					"name": "InsertAudit"
+				},
+				{
+					"name": "UpdateAudit"
+				},
+				{
+					"name": "alterRow1"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          customer_id as short,",
+				"          first_name as string,",
+				"          last_name as string,",
+				"          address as string,",
+				"          city as string,",
+				"          state as string,",
+				"          zip as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false,",
+				"     format: 'delta',",
+				"     fileSystem: 'project1',",
+				"     folderPath: 'sliver/Customers') ~> source",
+				"source(output(",
+				"          TGT_ID as integer,",
+				"          TGT_HASHKEY as long",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'query',",
+				"     store: 'sqlserver',",
+				"     query: 'Select CUSTOMER_ID as TGT_ID, HASHKEY as TGT_HASHKEY from CUSTOMERS_SCD1',",
+				"     isolationLevel: 'READ_UNCOMMITTED') ~> Target",
+				"source select(mapColumn(",
+				"          each(match(1==1),",
+				"               concat('src_',$$) = $$)",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> Rename",
+				"Rename derive(src_hashkey = crc32(concat(\r",
+				"    toString(src_customer_id),\r",
+				"    toString(src_first_name),\r",
+				"    toString(src_last_name),\r",
+				"    toString(src_address),\r",
+				"    toString(src_city),\r",
+				"    toString(src_state),\r",
+				"    toString(src_zip)\r",
+				"))) ~> GenerateHashkey",
+				"GenerateHashkey, Target join(src_customer_id == TGT_ID,",
+				"     joinType:'left',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> joinSourceWithTarget",
+				"joinSourceWithTarget split(isNull(TGT_ID),",
+				"     src_customer_id==TGT_ID && src_hashkey!=TGT_HASHKEY,",
+				"     disjoint: false) ~> Insert@(Insert, Update)",
+				"Insert@Insert derive(createdby = 'Dataflow',",
+				"          Updatedby = 'Dataflow',",
+				"          CreatedDate = currentTimestamp(),",
+				"          UpdatedDate = currentTimestamp()) ~> InsertAudit",
+				"Insert@Update derive(UpdatedBy = 'Dataflow-Updated',",
+				"          UpdatedDate = currentTimestamp()) ~> UpdateAudit",
+				"UpdateAudit alterRow(upsertIf(1==1)) ~> alterRow1",
+				"InsertAudit sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          CUSTOMER_ID as integer,",
+				"          FIRST_NAME as string,",
+				"          LAST_NAME as string,",
+				"          ADDRESS as string,",
+				"          CITY as string,",
+				"          STATE as string,",
+				"          ZIP as string,",
+				"          CREATEDBY as string,",
+				"          UPDATEDBY as string,",
+				"          CREATEDDATE as timestamp,",
+				"          UPDATEDATE as timestamp,",
+				"          HASHKEY as long",
+				"     ),",
+				"     format: 'table',",
+				"     store: 'sqlserver',",
+				"     schemaName: 'dbo',",
+				"     tableName: 'CUSTOMERS_SCD1',",
+				"     insertable: true,",
+				"     updateable: false,",
+				"     deletable: false,",
+				"     upsertable: false,",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          CUSTOMER_ID = src_customer_id,",
+				"          FIRST_NAME = src_first_name,",
+				"          LAST_NAME = src_last_name,",
+				"          ADDRESS = src_address,",
+				"          CITY = src_city,",
+				"          STATE = src_state,",
+				"          ZIP = src_zip,",
+				"          CREATEDBY = createdby,",
+				"          UPDATEDBY = Updatedby,",
+				"          CREATEDDATE = CreatedDate,",
+				"          UPDATEDATE = UpdatedDate,",
+				"          HASHKEY = src_hashkey",
+				"     )) ~> sink1",
+				"alterRow1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          CUSTOMER_ID as integer,",
+				"          FIRST_NAME as string,",
+				"          LAST_NAME as string,",
+				"          ADDRESS as string,",
+				"          CITY as string,",
+				"          STATE as string,",
+				"          ZIP as string,",
+				"          CREATEDBY as string,",
+				"          UPDATEDBY as string,",
+				"          CREATEDDATE as timestamp,",
+				"          UPDATEDATE as timestamp,",
+				"          HASHKEY as long",
+				"     ),",
+				"     format: 'table',",
+				"     store: 'sqlserver',",
+				"     schemaName: 'dbo',",
+				"     tableName: 'CUSTOMERS_SCD1',",
+				"     insertable: false,",
+				"     updateable: false,",
+				"     deletable: false,",
+				"     upsertable: true,",
+				"     keys:['CUSTOMER_ID'],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          CUSTOMER_ID = src_customer_id,",
+				"          FIRST_NAME = src_first_name,",
+				"          LAST_NAME = src_last_name,",
+				"          ADDRESS = src_address,",
+				"          CITY = src_city,",
+				"          STATE = src_state,",
+				"          ZIP = src_zip,",
+				"          UPDATEDBY = UpdatedBy,",
+				"          UPDATEDATE = UpdatedDate,",
+				"          HASHKEY = src_hashkey",
+				"     )) ~> sink2"
+			]
+		}
+	}
+}

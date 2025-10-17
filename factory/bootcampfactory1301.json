@@ -1,0 +1,9 @@
+{
+	"name": "bootcampfactory1301",
+	"location": "canadacentral",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "807267a6-f929-4d31-8625-6cd70eed4b0b",
+		"tenantId": "9fa0678f-1cf7-4222-bebb-827c8db074b9"
+	}
+}

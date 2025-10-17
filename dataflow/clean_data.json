@@ -1,0 +1,429 @@
+{
+	"name": "clean_data",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"linkedService": {
+						"referenceName": "AzureDataLakeStorage1",
+						"type": "LinkedServiceReference"
+					},
+					"name": "Accounts"
+				},
+				{
+					"linkedService": {
+						"referenceName": "AzureDataLakeStorage1",
+						"type": "LinkedServiceReference"
+					},
+					"name": "Customers"
+				},
+				{
+					"linkedService": {
+						"referenceName": "AzureDataLakeStorage1",
+						"type": "LinkedServiceReference"
+					},
+					"name": "LoanPayments"
+				},
+				{
+					"linkedService": {
+						"referenceName": "AzureDataLakeStorage1",
+						"type": "LinkedServiceReference"
+					},
+					"name": "Loans"
+				},
+				{
+					"linkedService": {
+						"referenceName": "AzureDataLakeStorage1",
+						"type": "LinkedServiceReference"
+					},
+					"name": "Transactions"
+				}
+			],
+			"sinks": [
+				{
+					"linkedService": {
+						"referenceName": "AzureDataLakeStorage1",
+						"type": "LinkedServiceReference"
+					},
+					"name": "sink"
+				},
+				{
+					"linkedService": {
+						"referenceName": "AzureDataLakeStorage1",
+						"type": "LinkedServiceReference"
+					},
+					"name": "sink1"
+				},
+				{
+					"linkedService": {
+						"referenceName": "AzureDataLakeStorage1",
+						"type": "LinkedServiceReference"
+					},
+					"name": "sink2"
+				},
+				{
+					"linkedService": {
+						"referenceName": "AzureDataLakeStorage1",
+						"type": "LinkedServiceReference"
+					},
+					"name": "sink3"
+				},
+				{
+					"linkedService": {
+						"referenceName": "AzureDataLakeStorage1",
+						"type": "LinkedServiceReference"
+					},
+					"name": "sink4"
+				}
+			],
+			"transformations": [
+				{
+					"name": "RemoveDuplicates"
+				},
+				{
+					"name": "Count"
+				},
+				{
+					"name": "RemoveNull"
+				},
+				{
+					"name": "RemoveCount"
+				},
+				{
+					"name": "alterRow"
+				},
+				{
+					"name": "RemoveDuplicatesCustomers"
+				},
+				{
+					"name": "CountCustomer"
+				},
+				{
+					"name": "RemoveNulls"
+				},
+				{
+					"name": "RemoveCountCustomer"
+				},
+				{
+					"name": "alterRow1"
+				},
+				{
+					"name": "RemoveDuplicatesPayments"
+				},
+				{
+					"name": "countPayments"
+				},
+				{
+					"name": "RemoveNullPayments"
+				},
+				{
+					"name": "RemoveCountPayments"
+				},
+				{
+					"name": "alterRow2"
+				},
+				{
+					"name": "RemoveDuplicateLoans"
+				},
+				{
+					"name": "CountLoans"
+				},
+				{
+					"name": "RemoveNullLoans"
+				},
+				{
+					"name": "RemoveCountLoans"
+				},
+				{
+					"name": "alterRow3"
+				},
+				{
+					"name": "RemoveDuplicatesTransactions"
+				},
+				{
+					"name": "CountTransactions"
+				},
+				{
+					"name": "RemoveNullTransactions"
+				},
+				{
+					"name": "RemoveCountTransactions"
+				},
+				{
+					"name": "alterRow4"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          account_id as short,",
+				"          customer_id as short,",
+				"          account_type as string,",
+				"          balance as double",
+				"     ),",
+				"     useSchema: false,",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false,",
+				"     format: 'delimited',",
+				"     fileSystem: 'project1',",
+				"     folderPath: 'bronze',",
+				"     fileName: 'accounts.csv',",
+				"     columnDelimiter: ',',",
+				"     escapeChar: '\\\\',",
+				"     quoteChar: '\\\"',",
+				"     columnNamesAsHeader: true) ~> Accounts",
+				"source(output(",
+				"          customer_id as short,",
+				"          first_name as string,",
+				"          last_name as string,",
+				"          address as string,",
+				"          city as string,",
+				"          state as string,",
+				"          zip as string",
+				"     ),",
+				"     useSchema: false,",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false,",
+				"     format: 'delimited',",
+				"     fileSystem: 'project1',",
+				"     folderPath: 'bronze',",
+				"     fileName: 'customers.csv',",
+				"     columnDelimiter: ',',",
+				"     escapeChar: '\\\\',",
+				"     quoteChar: '\\\"',",
+				"     columnNamesAsHeader: true) ~> Customers",
+				"source(output(",
+				"          payment_id as short,",
+				"          loan_id as short,",
+				"          payment_date as date,",
+				"          payment_amount as double",
+				"     ),",
+				"     useSchema: false,",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false,",
+				"     format: 'delimited',",
+				"     fileSystem: 'project1',",
+				"     folderPath: 'bronze',",
+				"     fileName: 'loan_payments.csv',",
+				"     columnDelimiter: ',',",
+				"     escapeChar: '\\\\',",
+				"     quoteChar: '\\\"',",
+				"     columnNamesAsHeader: true) ~> LoanPayments",
+				"source(output(",
+				"          loan_id as short,",
+				"          customer_id as short,",
+				"          loan_amount as double,",
+				"          interest_rate as double,",
+				"          loan_term as short",
+				"     ),",
+				"     useSchema: false,",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false,",
+				"     format: 'delimited',",
+				"     fileSystem: 'project1',",
+				"     folderPath: 'bronze',",
+				"     fileName: 'loans.csv',",
+				"     columnDelimiter: ',',",
+				"     escapeChar: '\\\\',",
+				"     quoteChar: '\\\"',",
+				"     columnNamesAsHeader: true) ~> Loans",
+				"source(output(",
+				"          transaction_id as short,",
+				"          account_id as short,",
+				"          transaction_date as date,",
+				"          transaction_amount as double,",
+				"          transaction_type as string",
+				"     ),",
+				"     useSchema: false,",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false,",
+				"     format: 'delimited',",
+				"     fileSystem: 'project1',",
+				"     folderPath: 'bronze',",
+				"     fileName: 'transactions.csv',",
+				"     columnDelimiter: ',',",
+				"     escapeChar: '\\\\',",
+				"     quoteChar: '\\\"',",
+				"     columnNamesAsHeader: true) ~> Transactions",
+				"Accounts window(over(account_id),",
+				"     asc(account_id, true),",
+				"     count = rowNumber()) ~> RemoveDuplicates",
+				"RemoveDuplicates filter(count==1) ~> Count",
+				"Count filter(account_type != '' &&",
+				"toInteger(balance) != 0 &&",
+				"!isNull(account_type) &&",
+				"!isNull(balance)) ~> RemoveNull",
+				"RemoveNull select(mapColumn(",
+				"          account_id,",
+				"          customer_id,",
+				"          account_type,",
+				"          balance",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> RemoveCount",
+				"RemoveCount alterRow(upsertIf(1==1)) ~> alterRow",
+				"Customers window(over(customer_id),",
+				"     asc(customer_id, true),",
+				"     count = rowNumber()) ~> RemoveDuplicatesCustomers",
+				"RemoveDuplicatesCustomers filter(count==1) ~> CountCustomer",
+				"CountCustomer filter(!isNull(customer_id)) ~> RemoveNulls",
+				"RemoveNulls select(mapColumn(",
+				"          customer_id,",
+				"          first_name,",
+				"          last_name,",
+				"          address,",
+				"          city,",
+				"          state,",
+				"          zip",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> RemoveCountCustomer",
+				"RemoveCountCustomer alterRow(upsertIf(1==1)) ~> alterRow1",
+				"LoanPayments window(over(payment_id),",
+				"     asc(payment_id, true),",
+				"     count = rowNumber()) ~> RemoveDuplicatesPayments",
+				"RemoveDuplicatesPayments filter(count==1) ~> countPayments",
+				"countPayments filter(!isNull(payment_id)) ~> RemoveNullPayments",
+				"RemoveNullPayments select(mapColumn(",
+				"          payment_id,",
+				"          loan_id,",
+				"          payment_date,",
+				"          payment_amount",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> RemoveCountPayments",
+				"RemoveCountPayments alterRow(upsertIf(1==1)) ~> alterRow2",
+				"Loans window(over(loan_id),",
+				"     asc(loan_id, true),",
+				"     count = rowNumber()) ~> RemoveDuplicateLoans",
+				"RemoveDuplicateLoans filter(count==1) ~> CountLoans",
+				"CountLoans filter(!isNull(loan_id)) ~> RemoveNullLoans",
+				"RemoveNullLoans select(mapColumn(",
+				"          loan_id,",
+				"          customer_id,",
+				"          loan_amount,",
+				"          interest_rate,",
+				"          loan_term",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> RemoveCountLoans",
+				"RemoveCountLoans alterRow(upsertIf(1==1)) ~> alterRow3",
+				"Transactions window(over(transaction_id),",
+				"     asc(transaction_id, true),",
+				"     count = rowNumber()) ~> RemoveDuplicatesTransactions",
+				"RemoveDuplicatesTransactions filter(count==1) ~> CountTransactions",
+				"CountTransactions filter(!isNull(transaction_id)) ~> RemoveNullTransactions",
+				"RemoveNullTransactions select(mapColumn(",
+				"          transaction_id,",
+				"          account_id,",
+				"          transaction_date,",
+				"          transaction_amount,",
+				"          transaction_type",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> RemoveCountTransactions",
+				"RemoveCountTransactions alterRow(upsertIf(1==1)) ~> alterRow4",
+				"alterRow sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'delta',",
+				"     fileSystem: 'project1',",
+				"     folderPath: 'sliver/Accounts',",
+				"     mergeSchema: false,",
+				"     autoCompact: false,",
+				"     optimizedWrite: false,",
+				"     vacuum: 0,",
+				"     deletable: false,",
+				"     insertable: false,",
+				"     updateable: false,",
+				"     upsertable: true,",
+				"     keys:['account_id'],",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> sink",
+				"alterRow1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'delta',",
+				"     fileSystem: 'project1',",
+				"     folderPath: 'sliver/Customers',",
+				"     mergeSchema: false,",
+				"     autoCompact: false,",
+				"     optimizedWrite: false,",
+				"     vacuum: 0,",
+				"     deletable: false,",
+				"     insertable: false,",
+				"     updateable: false,",
+				"     upsertable: true,",
+				"     keys:['customer_id'],",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> sink1",
+				"alterRow2 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'delta',",
+				"     fileSystem: 'project1',",
+				"     folderPath: 'sliver/LoanPayments',",
+				"     mergeSchema: false,",
+				"     autoCompact: false,",
+				"     optimizedWrite: false,",
+				"     vacuum: 0,",
+				"     deletable: false,",
+				"     insertable: false,",
+				"     updateable: false,",
+				"     upsertable: true,",
+				"     keys:['payment_id'],",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> sink2",
+				"alterRow3 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'delta',",
+				"     fileSystem: 'project1',",
+				"     folderPath: 'sliver/Loans',",
+				"     mergeSchema: false,",
+				"     autoCompact: false,",
+				"     optimizedWrite: false,",
+				"     vacuum: 0,",
+				"     deletable: false,",
+				"     insertable: false,",
+				"     updateable: false,",
+				"     upsertable: true,",
+				"     keys:['loan_id'],",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> sink3",
+				"alterRow4 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'delta',",
+				"     fileSystem: 'project1',",
+				"     folderPath: 'sliver/Transactions',",
+				"     mergeSchema: false,",
+				"     autoCompact: false,",
+				"     optimizedWrite: false,",
+				"     vacuum: 0,",
+				"     deletable: false,",
+				"     insertable: false,",
+				"     updateable: false,",
+				"     upsertable: true,",
+				"     keys:['transaction_id'],",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> sink4"
+			]
+		}
+	}
+}

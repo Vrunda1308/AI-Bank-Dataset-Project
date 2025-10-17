@@ -1,0 +1,188 @@
+{
+	"name": "scd1_loan",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"linkedService": {
+						"referenceName": "AzureDataLakeStorage1",
+						"type": "LinkedServiceReference"
+					},
+					"name": "source"
+				},
+				{
+					"linkedService": {
+						"referenceName": "AzureSqlDatabase1",
+						"type": "LinkedServiceReference"
+					},
+					"name": "Target"
+				}
+			],
+			"sinks": [
+				{
+					"linkedService": {
+						"referenceName": "AzureSqlDatabase1",
+						"type": "LinkedServiceReference"
+					},
+					"name": "sink1"
+				},
+				{
+					"linkedService": {
+						"referenceName": "AzureSqlDatabase1",
+						"type": "LinkedServiceReference"
+					},
+					"name": "sink2"
+				}
+			],
+			"transformations": [
+				{
+					"name": "Rename"
+				},
+				{
+					"name": "GenerateHashkey"
+				},
+				{
+					"name": "joinSourceWithTarget"
+				},
+				{
+					"name": "Insert"
+				},
+				{
+					"name": "InsertAudit"
+				},
+				{
+					"name": "alterRow1"
+				},
+				{
+					"name": "UpdateAudit"
+				},
+				{
+					"name": "alterRow2"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          loan_id as short,",
+				"          customer_id as short,",
+				"          loan_amount as double,",
+				"          interest_rate as double,",
+				"          loan_term as short",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false,",
+				"     format: 'delta',",
+				"     fileSystem: 'project1',",
+				"     folderPath: 'sliver/Loans') ~> source",
+				"source(output(",
+				"          TGT_ID as integer,",
+				"          TGT_HASHKEY as long",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'query',",
+				"     store: 'sqlserver',",
+				"     query: 'Select LOAN_ID as TGT_ID, HASHKEY as TGT_HASHKEY from LOANS_SCD1',",
+				"     isolationLevel: 'READ_UNCOMMITTED') ~> Target",
+				"source select(mapColumn(",
+				"          each(match(1==1),",
+				"               concat('src_',$$) = $$)",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> Rename",
+				"Rename derive(src_hashkey = crc32(concat(toString(src_loan_id), toString(src_customer_id), toString(src_loan_amount), toString(src_interest_rate), toString(src_loan_term)))) ~> GenerateHashkey",
+				"GenerateHashkey, Target join(src_loan_id == TGT_ID,",
+				"     joinType:'left',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> joinSourceWithTarget",
+				"joinSourceWithTarget split(isNull(TGT_ID),",
+				"     src_loan_id==TGT_ID && src_hashkey!=TGT_HASHKEY,",
+				"     disjoint: false) ~> Insert@(insert, Update)",
+				"Insert@insert derive(src_updatedby = 'Dataflow',",
+				"          src_updateddate = currentTimestamp(),",
+				"          src_createdby = 'Dataflow',",
+				"          src_createddate = currentTimestamp()) ~> InsertAudit",
+				"InsertAudit alterRow(upsertIf(1==1)) ~> alterRow1",
+				"Insert@Update derive(UpdatedBy = 'Dataflow-Updated',",
+				"          UpdatedDate = currentTimestamp()) ~> UpdateAudit",
+				"UpdateAudit alterRow(upsertIf(1==1)) ~> alterRow2",
+				"alterRow1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          LOAN_ID as integer,",
+				"          CUSTOMER_ID as integer,",
+				"          LOAN_AMOUNT as string,",
+				"          INTEREST_RATE as string,",
+				"          LOAN_TERM as string,",
+				"          CREATEDBY as string,",
+				"          UPDATEDBY as string,",
+				"          CREATEDDATE as timestamp,",
+				"          UPDATEDATE as timestamp,",
+				"          HASHKEY as long",
+				"     ),",
+				"     format: 'table',",
+				"     store: 'sqlserver',",
+				"     schemaName: 'dbo',",
+				"     tableName: 'LOANS_SCD1',",
+				"     insertable: false,",
+				"     updateable: false,",
+				"     deletable: false,",
+				"     upsertable: true,",
+				"     keys:['LOAN_ID'],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          LOAN_ID = src_loan_id,",
+				"          CUSTOMER_ID = src_customer_id,",
+				"          LOAN_AMOUNT = src_loan_amount,",
+				"          INTEREST_RATE = src_interest_rate,",
+				"          LOAN_TERM = src_loan_term,",
+				"          CREATEDBY = src_createdby,",
+				"          UPDATEDBY = src_updatedby,",
+				"          CREATEDDATE = src_createddate,",
+				"          UPDATEDATE = src_updateddate,",
+				"          HASHKEY = src_hashkey",
+				"     )) ~> sink1",
+				"alterRow2 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          LOAN_ID as integer,",
+				"          CUSTOMER_ID as integer,",
+				"          LOAN_AMOUNT as string,",
+				"          INTEREST_RATE as string,",
+				"          LOAN_TERM as string,",
+				"          CREATEDBY as string,",
+				"          UPDATEDBY as string,",
+				"          CREATEDDATE as timestamp,",
+				"          UPDATEDATE as timestamp,",
+				"          HASHKEY as long",
+				"     ),",
+				"     format: 'table',",
+				"     store: 'sqlserver',",
+				"     schemaName: 'dbo',",
+				"     tableName: 'LOANS_SCD1',",
+				"     insertable: false,",
+				"     updateable: false,",
+				"     deletable: false,",
+				"     upsertable: true,",
+				"     keys:['LOAN_ID'],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          LOAN_ID = src_loan_id,",
+				"          CUSTOMER_ID = src_customer_id,",
+				"          LOAN_AMOUNT = src_loan_amount,",
+				"          INTEREST_RATE = src_interest_rate,",
+				"          LOAN_TERM = src_loan_term,",
+				"          UPDATEDBY = UpdatedBy,",
+				"          UPDATEDATE = UpdatedDate,",
+				"          HASHKEY = src_hashkey",
+				"     )) ~> sink2"
+			]
+		}
+	}
+}
